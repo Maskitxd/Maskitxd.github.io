@@ -1,1 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Гадалка на картах</title>
 
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #3a1c71, #090014);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.app {
+  width: 390px;
+  padding: 25px;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 34px;
+}
+
+.desc {
+  opacity: 0.75;
+  margin-bottom: 20px;
+}
+
+.table {
+  position: relative;
+  height: 270px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deck {
+  width: 135px;
+  height: 190px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ff0055, #6a00ff);
+  border: 7px solid white;
+  box-shadow: 0 18px 40px rgba(0,0,0,.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 70px;
+  animation: shuffle 0.45s infinite;
+}
+
+@keyframes shuffle {
+  0% { transform: rotate(-4deg) translateX(-3px); }
+  50% { transform: rotate(4deg) translateX(3px); }
+  100% { transform: rotate(-4deg) translateX(-3px); }
+}
+
+.card {
+  position: absolute;
+  width: 170px;
+  height: 235px;
+  background: white;
+  border-radius: 18px;
+  border: 7px solid white;
+  box-shadow: 0 20px 45px rgba(0,0,0,.65);
+  transform: translateY(30px) scale(.5) rotate(-8deg);
+  opacity: 0;
+  transition: .7s;
+  overflow: hidden;
+}
+
+.card.show {
+  opacity: 1;
+  transform: translateY(-10px) scale(1) rotate(0deg);
+}
+
+.card-bg {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 85px;
+}
+
+.orange { background: #f29b38; }
+.blue { background: #36b9ff; }
+.red { background: #e84141; }
+.green { background: #69c85c; }
+.pink { background: #ff65b7; }
+.purple { background: #7c4dff; }
+
+.controls {
+  margin-top: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  font-size: 20px;
+  text-align: center;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: #ffd000;
+  color: #1b1b1b;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button:hover {
+  transform: scale(1.03);
+  background: #ffe45c;
+}
+
+.result {
+  margin-top: 22px;
+  min-height: 120px;
+}
+
+.card-title {
+  font-size: 26px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.prediction {
+  background: white;
+  color: black;
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.25;
+  max-width: 100%;
+}
+
+.loading {
+  font-size: 22px;
+  font-weight: 800;
+  opacity: .8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>🔮 Гадалка</h1>
+  <div class="desc">Назови карту от 1 до 10 и нажми ГАДАТЬ</div>
+
+  <div class="table">
+    <div class="deck" id="deck">🂠</div>
+
+    <div class="card" id="card">
+      <div class="card-bg" id="cardBg">🦉</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input id="number" type="number" min="1" max="10" placeholder="Число от 1 до 10">
+    <button onclick="fortune()">ГАДАТЬ</button>
+  </div>
+
+  <div class="result">
+    <div class="loading" id="loading"></div>
+    <div class="card-title" id="title"></div>
+    <div class="prediction" id="prediction" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    title: "Сова со скакалкой",
+    text: "Вся семья умрет от бомбардировки послезавтра",
+    emoji: "🦉",
+    color: "orange"
+  },
+  {
+    title: "Тигр фокусник",
+    text: "Завтра умрет мать и от горя ноги отнимутся",
+    emoji: "🐯",
+    color: "blue"
+  },
+  {
+    title: "Лемур с миской макарон",
+    text: "У какого-то таджика умрет мать, но это так к слову",
+    emoji: "🦝",
+    color: "red"
+  },
+  {
+    title: "Лягушка с телефоном",
+    text: "Полное выздоровление, поездка на СВО",
+    emoji: "🐸",
+    color: "orange"
+  },
+  {
+    title: "Лев с футбольным мячом",
+    text: "Мама в болоте утонет",
+    emoji: "🦁",
+    color: "purple"
+  },
+  {
+    title: "Гусь теннисист",
+    text: "Какой-то наркоман через неделю изуродует вам лицо",
+    emoji: "🪿",
+    color: "red"
+  },
+  {
+    title: "Белка плавает",
+    text: "Завтра ноги отнимутся, смерть в течение года от рака",
+    emoji: "🐿️",
+    color: "blue"
+  },
+  {
+    title: "Цыплёнок с кисточкой",
+    text: "Благоприятный исход, смерть к 34 годам от наркотиков под мостом",
+    emoji: "🐥",
+    color: "pink"
+  },
+  {
+    title: "Индюк пират",
+    text: "Хуй на СВО оторвет",
+    emoji: "🦃",
+    color: "pink"
+  },
+  {
+    title: "Собака с клюшкой",
+    text: "Хуй откусит ахматовец во время минета",
+    emoji: "🐶",
+    color: "green"
+  },
+  {
+    title: "Медведь на скейтборде",
+    text: "Завтра к матери домой прилетает шахед",
+    emoji: "🐻",
+    color: "green"
+  },
+  {
+    title: "Цапля с тележкой",
+    text: "Мать будет лежать в гробу",
+    emoji: "🦩",
+    color: "blue"
+  },
+  {
+    title: "Корова с шарами для боулинга",
+    text: "Родится здоровый сын, но в 5 лет он утонет с друзьями в болоте",
+    emoji: "🐮",
+    color: "green"
+  },
+  {
+    title: "Конь с пампушками",
+    text: "Вся семья на СВО",
+    emoji: "🐴",
+    color: "green"
+  },
+  {
+    title: "Свинья балерина",
+    text: "Смерть матери послезавтра",
+    emoji: "🐷",
+    color: "orange"
+  },
+  {
+    title: "Кенгуру со сковородкой",
+    text: "Внуки утонут на отдыхе",
+    emoji: "🦘",
+    color: "blue"
+  },
+  {
+    title: "Конь с удочкой",
+    text: "Смерть всех детей",
+    emoji: "🐴",
+    color: "purple"
+  }
+];
+
+function fortune() {
+  const input = document.getElementById("number");
+  const value = Number(input.value);
+
+  if (!value || value < 1 || value > 10) {
+    alert("Введи число от 1 до 10");
+    return;
+  }
+
+  const card = document.getElementById("card");
+  const cardBg = document.getElementById("cardBg");
+  const title = document.getElementById("title");
+  const prediction = document.getElementById("prediction");
+  const loading = document.getElementById("loading");
+
+  card.classList.remove("show");
+  title.textContent = "";
+  prediction.style.display = "none";
+  prediction.textContent = "";
+  loading.textContent = "Колода перемешивается...";
+
+  setTimeout(() => {
+    const randomCard = cards[Math.floor(Math.random() * cards.length)];
+
+    cardBg.className = "card-bg " + randomCard.color;
+    cardBg.textContent = randomCard.emoji;
+
+    loading.textContent = "";
+    title.textContent = randomCard.title;
+    prediction.textContent = randomCard.text;
+    prediction.style.display = "inline-block";
+
+    card.classList.add("show");
+  }, 900);
+}
+</script>
+
+</body>
+</html>
